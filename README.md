@@ -1,43 +1,47 @@
-# 프로젝트 소개
+# Works AI Agent Module (PoC)
 
-본 프로젝트는 Fastcampus 강의 중 제공되는 프로젝트 입니다.
+**Works AI Agent Module**은 다양한 업무 보조 및 채팅 기능을 수행하는 AI 에이전트들을 모듈화하여 관리하는 프로젝트입니다.  
+이 리포지토리는 Works AI 서비스의 **PoC(Proof of Concept)**를 위해 개발되었으며, Python과 Poetry를 기반으로 형상 관리 및 배포 환경이 구성되어 있습니다.
 
-- 강의: [RAG 비법노트](https://fastcampus.co.kr/data_online_teddy)
-- 프로젝트 링크: https://link.teddynote.com/PERPLEX
+## 📌 프로젝트 소개 (Project Overview)
 
+사용자의 업무 생산성을 높이기 위해 **일반 채팅, 문서 분석, 업무 자동화(PPT, 엑셀, 이메일 등)** 등 특화된 목적을 가진 AI 에이전트들을 제공합니다. LangChain/LangGraph 프레임워크를 활용하여 확장 가능한 구조로 설계되었습니다.
 
-## 설치
+## 🛠 기술 스택 (Tech Stack)
 
-다음의 명령어로 가상환경을 활성화 합니다.
+* **Language:** Python 3.11+
+* **Dependency Management:** [Poetry](https://python-poetry.org/)
+* **Framework:** LangChain, LangGraph
+* **LLM:** OpenAI (GPT-4o, GPT-4.1 nano 등)
+* **UI/Interface:** Streamlit (예정)
+* **Search:** Tavily Search API
 
-```bash
-poetry shell
-```
+## 🤖 제공되는 에이전트 (Agents)
 
-패키지를 설치합니다.
+### 1. 채팅 및 유틸리티 (General & Chat)
+| 에이전트 명 | 기능 설명 |
+| :--- | :--- |
+| **신중한 똑쟁이** | GPT-4o 기반. 대화, 코딩, 검색, 그림 생성/인식 등 복합 작업 수행 |
+| **티키타카 장인** | GPT-4.1 nano 기반. 가볍고 빠른 일상 대화 및 검색 |
+| **문서 파일 검토** | PDF 등 문서를 업로드하여 요약 및 질의응답(Q&A) 수행 |
+| **데이터 분석** | 엑셀/CSV 파일 업로드 후 데이터 분석 및 편집 |
+| **키워드 검색** | 키워드 입력 시 핵심 정보와 최신 소식 정리 |
+| **뉴스 검색** | 키워드 관련 최신 뉴스 정리 및 제공 |
+| **특수문자 제안** | 상황에 적절한 특수문자 추천 |
+| **세금 전문가** | 기초적인 세무 상담 및 세금 관련 질의응답 |
 
-```bash
-poetry install
-```
+### 2. 업무 보조 (Business Productivity)
+| 에이전트 명 | 기능 설명 |
+| :--- | :--- |
+| **파워포인트 기획** | 사업 내용을 입력하면 PPT 목차 및 구성 제안 |
+| **계약서 검토** | 상대방에게 받은 계약서 초안 검토 및 수정 제안 |
+| **이메일 작성** | 내용만 입력하면 전문적인 비즈니스 이메일 작성 |
+| **영문 이메일** | 한글 내용을 바탕으로 영문 비즈니스 메일 작성 |
+| **SQL 만들기** | 자연어로 분석 요청 시 SQL 쿼리문 초안 작성 |
+| **엑셀 전문가** | 엑셀 사용 중 모르는 사항 질문 답변 |
+| **엑셀 함수 추천** | 상황에 적절한 엑셀 함수와 사용법 안내 |
+| **엑셀 VBA 작성** | 필요한 업무 자동화를 위한 VBA 코드 작성 |
 
-## 실행
+## 🚀 설치 및 실행 가이드 (Installation)
 
-```bash
-poetry run streamlit run main.py
-```
-
-## 스트림릿에 배포
-
-1. 다음의 [링크](https://share.streamlit.io/)로 접속합니다.
-2. 계정을 생성 합니다.
-3. 우측 상단의 "Create app" 버튼을 클릭합니다.
-4. "Deploy a public app from GitHub" 버튼을 클릭합니다.
-5. 본인의 "Repository" 를 입력합니다. 링크를 입력합니다.
-6. Main file path 는 "main.py" 입니다.
-7. "Advanced settings" 를 클릭합니다.
-    - `Python version` 은 3.11 을 선택합니다.
-    - `Secrets` 에 API KEY 를 입력합니다.
-    - "Save" 버튼을 클릭합니다.
-8. "Deploy" 버튼을 클릭합니다.
-
-
+이 프로젝트는 **Poetry**를 사용하여 의존성을 관리합니다.
