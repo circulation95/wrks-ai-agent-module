@@ -94,13 +94,11 @@ def stream_handler(streamlit_container, agent_executor, inputs, config):
                 )
                 if current_tool_message:
                     current_tool_message["tool_result"] = chunk_msg.content
-                    with st.status(f'✅ {current_tool_message["tool_name"]}'):
-                        if current_tool_message["tool_name"] == "web_search":
-                            st.markdown(
-                                format_search_result(
-                                    current_tool_message["tool_result"]
-                                )
-                            )
+                    with st.status(f'툴: {current_tool_message["tool_name"]}'):
+                        render_tool_result(
+                            current_tool_message["tool_name"],
+                            current_tool_message["tool_result"],
+                        )
 
             if metadata["langgraph_node"] == "agent":
                 if chunk_msg.content:
@@ -111,3 +109,53 @@ def stream_handler(streamlit_container, agent_executor, inputs, config):
                     agent_message.markdown(agent_answer)
 
         return container, tool_args, agent_answer
+
+
+def render_tool_result(tool_name: str, tool_result: str):
+    import json
+
+    if tool_name == "web_search":
+        st.markdown(format_search_result(tool_result))
+        return
+
+    if tool_name == "image_generate":
+        try:
+            payload = json.loads(tool_result)
+        except Exception:
+            st.markdown(tool_result)
+            return
+
+        images = payload.get("images", []) if isinstance(payload, dict) else []
+        if not images:
+            st.markdown("이미지 결과가 없습니다.")
+            return
+
+        for idx, image in enumerate(images, start=1):
+            st.image(image, caption=f"생성 이미지 {idx}")
+        return
+
+    if tool_name == "document_search":
+        try:
+            payload = json.loads(tool_result)
+        except Exception:
+            st.markdown(tool_result)
+            return
+
+        results = payload.get("results", []) if isinstance(payload, dict) else []
+        context = payload.get("context", "") if isinstance(payload, dict) else ""
+        if not results:
+            st.markdown("검색 결과가 없습니다.")
+            return
+
+        if context:
+            with st.expander("RAG 컨텍스트"):
+                st.markdown(context)
+
+        for idx, item in enumerate(results, start=1):
+            score = item.get("score", 0)
+            content = item.get("content", "")
+            st.markdown(f"**문서 조각 {idx} (score: {score:.4f})**")
+            st.markdown(content)
+        return
+
+    st.markdown(tool_result)

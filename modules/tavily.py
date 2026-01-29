@@ -85,6 +85,10 @@ class TavilySearch(BaseTool):
             max_results (int): 기본 검색 결과 수
         """
         super().__init__()
+        if TavilyClient is None:
+            raise ImportError(
+                "tavily-python is not installed. Run: poetry add tavily-python"
+            )
         if api_key is None:
             api_key = os.environ.get("TAVILY_API_KEY", None)
 
