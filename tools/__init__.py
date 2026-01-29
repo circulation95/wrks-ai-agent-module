@@ -1,7 +1,11 @@
 from typing import Any, List
+from langchain_core.tools import BaseTool as LCToolBase
+from pydantic import BaseModel, Field
+
+from modules.base import BaseTool
 from .tavily import TavilySearch
 from .openai_image import OpenAIImageGenerate
-from .base import BaseTool
+from .codegen import CodeGenerate
 from .rag import RAGIndex
 
 
@@ -87,19 +91,26 @@ class ImageGenTool(BaseTool[OpenAIImageGenerate]):
         return tool(*args, **kwargs)
 
 
-class DocumentSearchTool(BaseTool):
+class DocumentSearchInput(BaseModel):
+    """Input for document search."""
+
+    query: str = Field(description="문서 검색 질의")
+
+
+class DocumentSearchTool(LCToolBase):
     """업로드 문서를 대상으로 검색하는 도구"""
+
+    name: str = "document_search"
+    description: str = "Search uploaded documents for relevant context"
+    args_schema: type[BaseModel] = DocumentSearchInput
 
     def __init__(self, rag_index: RAGIndex, top_k: int = 4, max_chars: int = 2000):
         super().__init__()
-        self.rag_index = rag_index
-        self.top_k = top_k
-        self.max_chars = max_chars
+        object.__setattr__(self, "rag_index", rag_index)
+        object.__setattr__(self, "top_k", top_k)
+        object.__setattr__(self, "max_chars", max_chars)
 
-    def _create_tool(self):
-        return self
-
-    def __call__(self, query: str, **kwargs: Any) -> Any:
+    def _run(self, query: str, **kwargs: Any) -> Any:
         import json
 
         top_k = kwargs.get("top_k", self.top_k)
@@ -108,3 +119,32 @@ class DocumentSearchTool(BaseTool):
         context = self.rag_index.build_context(query, top_k=top_k, max_chars=max_chars)
         payload = {"results": results, "context": context}
         return json.dumps(payload, ensure_ascii=False)
+
+
+class CodeGenTool(BaseTool[CodeGenerate]):
+    """코드 생성 도구"""
+
+    def __init__(
+        self,
+        model_name: str = "gpt-4o-mini",
+        max_tokens: int = 800,
+        temperature: float = 0.2,
+    ):
+        super().__init__()
+        self.model_name = model_name
+        self.max_tokens = max_tokens
+        self.temperature = temperature
+
+    def _create_tool(self) -> CodeGenerate:
+        code_tool = CodeGenerate(
+            model_name=self.model_name,
+            max_tokens=self.max_tokens,
+            temperature=self.temperature,
+        )
+        code_tool.name = "code_generate"
+        code_tool.description = "Use this tool to generate code from a task description"
+        return code_tool
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        tool = self._create_tool()
+        return tool(*args, **kwargs)

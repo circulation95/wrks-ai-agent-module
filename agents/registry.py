@@ -3,56 +3,56 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Dict
 
-from .careful_smart import (
+from agents.careful_smart import (
     AGENT_ID as CAREFUL_SMART_ID,
     AGENT_NAME as CAREFUL_SMART_NAME,
     DESCRIPTION as CAREFUL_SMART_DESC,
     DEFAULT_MODEL as CAREFUL_SMART_MODEL,
     create_executor as create_careful_smart,
 )
-from .data_analysis import (
+from agents.data_analysis import (
     AGENT_ID as DATA_ANALYSIS_ID,
     AGENT_NAME as DATA_ANALYSIS_NAME,
     DESCRIPTION as DATA_ANALYSIS_DESC,
     DEFAULT_MODEL as DATA_ANALYSIS_MODEL,
     create_executor as create_data_analysis,
 )
-from .document_review import (
+from agents.document_review import (
     AGENT_ID as DOCUMENT_REVIEW_ID,
     AGENT_NAME as DOCUMENT_REVIEW_NAME,
     DESCRIPTION as DOCUMENT_REVIEW_DESC,
     DEFAULT_MODEL as DOCUMENT_REVIEW_MODEL,
     create_executor as create_document_review,
 )
-from .keyword_search import (
+from agents.keyword_search import (
     AGENT_ID as KEYWORD_SEARCH_ID,
     AGENT_NAME as KEYWORD_SEARCH_NAME,
     DESCRIPTION as KEYWORD_SEARCH_DESC,
     DEFAULT_MODEL as KEYWORD_SEARCH_MODEL,
     create_executor as create_keyword_search,
 )
-from .news_search import (
+from agents.news_search import (
     AGENT_ID as NEWS_SEARCH_ID,
     AGENT_NAME as NEWS_SEARCH_NAME,
     DESCRIPTION as NEWS_SEARCH_DESC,
     DEFAULT_MODEL as NEWS_SEARCH_MODEL,
     create_executor as create_news_search,
 )
-from .special_chars import (
+from agents.special_chars import (
     AGENT_ID as SPECIAL_CHARS_ID,
     AGENT_NAME as SPECIAL_CHARS_NAME,
     DESCRIPTION as SPECIAL_CHARS_DESC,
     DEFAULT_MODEL as SPECIAL_CHARS_MODEL,
     create_executor as create_special_chars,
 )
-from .tax_expert import (
+from agents.tax_expert import (
     AGENT_ID as TAX_EXPERT_ID,
     AGENT_NAME as TAX_EXPERT_NAME,
     DESCRIPTION as TAX_EXPERT_DESC,
     DEFAULT_MODEL as TAX_EXPERT_MODEL,
     create_executor as create_tax_expert,
 )
-from .tikitaka import (
+from agents.tikitaka import (
     AGENT_ID as TIKITAKA_ID,
     AGENT_NAME as TIKITAKA_NAME,
     DESCRIPTION as TIKITAKA_DESC,

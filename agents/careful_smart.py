@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from .common import build_system_prompt
-from ..agent import create_agent_executor
+from agents.common import build_system_prompt
+from modules.agent import create_agent_executor
 
 AGENT_ID = "careful_smart"
 AGENT_NAME = "신중한 똑쟁이"

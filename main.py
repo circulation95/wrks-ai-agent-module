@@ -2,11 +2,10 @@ from attr import dataclass
 import streamlit as st
 from langchain_core.messages.chat import ChatMessage
 from dotenv import load_dotenv
-from modules.chat_agents.registry import AGENT_SPEC_BY_ID, AGENT_SPECS
+from agents.registry import AGENT_SPEC_BY_ID, AGENT_SPECS
 from modules.handler import stream_handler, format_search_result, render_tool_result
-from modules.tools import WebSearchTool, ImageGenTool, DocumentSearchTool
-from modules.rag import RAGIndex
-from openai import OpenAI
+from tools import WebSearchTool, ImageGenTool, DocumentSearchTool, CodeGenTool
+from tools import RAGIndex
 from pypdf import PdfReader
 import io
 from uuid import uuid4
@@ -61,6 +60,12 @@ IMAGE_AGENT_IDS = {
     "tikitaka",
 }
 
+CODE_AGENT_IDS = {
+    "careful_smart",
+}
+
+DOC_DB_PATH = "data/doc_index"
+
 DOC_AGENT_IDS = {
     "document_review",
 }
@@ -105,10 +110,13 @@ with st.sidebar:
     use_search = selected_agent_id in SEARCH_AGENT_IDS
     use_image = selected_agent_id in IMAGE_AGENT_IDS
     use_doc = selected_agent_id in DOC_AGENT_IDS
+    use_code = selected_agent_id in CODE_AGENT_IDS
     if not use_search:
         st.caption("선택한 에이전트는 웹 검색을 사용하지 않습니다.")
     if use_doc:
         st.caption("문서 업로드 기반 RAG 검색을 사용합니다.")
+    if use_code:
+        st.caption("코드 생성 도구를 사용합니다.")
 
     # 대화 유지/초기화 설정
     preserve_history = st.toggle(
@@ -146,6 +154,9 @@ with st.sidebar:
         doc_max_chars = st.number_input(
             "컨텍스트 최대 길이", min_value=500, max_value=6000, value=2000, step=100, key="doc_max_chars"
         )
+        doc_fetch_k = st.slider("문서 검색 Fetch-K", 5, 50, 30, key="doc_fetch_k")
+        doc_top_n = st.slider("리랭크 Top-N", 1, 10, 8, key="doc_top_n")
+        doc_use_rerank = st.toggle("Jina 리랭커 사용", value=True, key="doc_use_rerank")
         build_docs_btn = None
 
     # include_domains 설정
@@ -243,6 +254,7 @@ def build_agent_config():
         "use_search": use_search,
         "use_image": use_image,
         "use_doc": use_doc,
+        "use_code": use_code,
         "search_topic": search_topic,
         "search_result_count": search_result_count,
         "include_domains": tuple(st.session_state["include_domains"]),
@@ -251,11 +263,14 @@ def build_agent_config():
         "doc_chunk_size": st.session_state.get("doc_chunk_size", 800),
         "doc_overlap": st.session_state.get("doc_overlap", 150),
         "doc_max_chars": st.session_state.get("doc_max_chars", 2000),
+        "doc_fetch_k": st.session_state.get("doc_fetch_k", 30),
+        "doc_top_n": st.session_state.get("doc_top_n", 8),
+        "doc_use_rerank": st.session_state.get("doc_use_rerank", True),
     }
 
 
 def _extract_text_from_uploads(files):
-    texts = []
+    docs = []
     hashes = []
     for f in files or []:
         data = f.read()
@@ -268,13 +283,13 @@ def _extract_text_from_uploads(files):
             page_texts = []
             for page in reader.pages:
                 page_texts.append(page.extract_text() or "")
-            texts.append("\n".join(page_texts))
+            docs.append({"text": "\n".join(page_texts), "source": f.name})
         else:
             try:
-                texts.append(data.decode("utf-8"))
+                docs.append({"text": data.decode("utf-8"), "source": f.name})
             except Exception:
-                texts.append(data.decode("latin-1"))
-    return texts, hashes
+                docs.append({"text": data.decode("latin-1"), "source": f.name})
+    return docs, hashes
 
 
 def _ensure_doc_index(files):
@@ -283,20 +298,21 @@ def _ensure_doc_index(files):
         st.session_state["doc_hashes"] = []
         return
 
-    texts, hashes = _extract_text_from_uploads(files)
+    docs, hashes = _extract_text_from_uploads(files)
     prev_hashes = st.session_state.get("doc_hashes", [])
     if hashes == prev_hashes and st.session_state.get("doc_index") is not None:
         return
 
     try:
-        client = OpenAI()
         rag = RAGIndex(
-            client=client,
+            db_path=DOC_DB_PATH,
             chunk_size=st.session_state.get("doc_chunk_size", 800),
             overlap=st.session_state.get("doc_overlap", 150),
+            fetch_k=st.session_state.get("doc_fetch_k", 30),
+            top_n=st.session_state.get("doc_top_n", 8),
+            use_rerank=st.session_state.get("doc_use_rerank", True),
         )
-        for text in texts:
-            rag.add_text(text)
+        rag.ensure_index(docs, hashes)
         st.session_state["doc_index"] = rag
         st.session_state["doc_hashes"] = hashes
     except Exception:
@@ -316,6 +332,10 @@ def create_agent_from_config(auto=False):
         image_tool = ImageGenTool().create()
         tools.append(image_tool)
 
+    if use_code:
+        code_tool = CodeGenTool().create()
+        tools.append(code_tool)
+
     if use_doc:
         doc_index = st.session_state.get("doc_index")
         if doc_index is not None:
@@ -323,7 +343,7 @@ def create_agent_from_config(auto=False):
                 doc_index,
                 top_k=st.session_state.get("doc_top_k", 4),
                 max_chars=st.session_state.get("doc_max_chars", 2000),
-            ).create()
+            )
             doc_tool.name = "document_search"
             doc_tool.description = "Search uploaded documents for relevant context"
             tools.append(doc_tool)

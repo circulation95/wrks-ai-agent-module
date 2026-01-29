@@ -32,6 +32,9 @@ There should be no redundant sources. It should simply be:
 4. Final review:
 - Ensure the answer follows the required structure
 - Check that all guidelines have been followed
+
+If you use document_search:
+- Include the referenced document file names in the **??** section
 """
 
 

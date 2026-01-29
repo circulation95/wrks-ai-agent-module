@@ -154,7 +154,8 @@ def render_tool_result(tool_name: str, tool_result: str):
         for idx, item in enumerate(results, start=1):
             score = item.get("score", 0)
             content = item.get("content", "")
-            st.markdown(f"**문서 조각 {idx} (score: {score:.4f})**")
+            source = item.get("source", "uploaded_document")
+            st.markdown(f"**문서 조각 {idx} (source: {source})**")
             st.markdown(content)
         return
 
