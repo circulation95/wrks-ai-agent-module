@@ -3,13 +3,11 @@ from __future__ import annotations
 from typing import Any, Annotated, TypedDict
 from uuid import uuid4
 import json
-
 from langchain_core.messages import AIMessage, SystemMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph, add_messages
 from langgraph.prebuilt import ToolNode, create_react_agent
-
 
 def _guess_language(text: str) -> str:
     lowered = text.lower()
@@ -47,6 +45,7 @@ def _classify_intent_llm(
         "You are a conservative routing classifier for tool use. "
         "Only choose a tool when it is clearly necessary. "
         "If the query can be answered without tools, choose null. "
+        "If the only available tool is document_search, you MUST use it. "
         "Choose a single best tool or none. "
         "Return ONLY valid JSON with keys: tool, args. "
         "If no tool is needed, set tool to null and args to {}."
@@ -127,13 +126,13 @@ def _create_routed_agent_executor(
 
 
 def create_agent_executor(model_name="gpt-4o", tools=None, system_prompt=None, route_tools=True):
-    # ??? ??
+    # 메모리 설정
     memory = MemorySaver()
 
-    # ?? ??
+    # 모델 설정
     model = ChatOpenAI(model_name=model_name, max_tokens=1024)
 
-    # ??? ???? ??
+    # 시스템 프롬프트 설정
     if tools is None:
         tools = []
 

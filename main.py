@@ -9,9 +9,12 @@ from tools import RAGIndex
 from pypdf import PdfReader
 import io
 from uuid import uuid4
+from modules.util import langsmith
 
 # API KEY 로드
 load_dotenv()
+
+langsmith("웍스 AI")
 
 st.title("웍스AI")
 st.markdown(
