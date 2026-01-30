@@ -12,13 +12,13 @@ def get_current_tool_message(tool_args, tool_call_id):
     Returns:
         dict: Tool message if found, None otherwise
     """
-    if tool_call_id:
-        for tool_arg in tool_args:
-            if tool_arg["tool_call_id"] == tool_call_id:
-                return tool_arg
+    if not tool_call_id:
         return None
-    else:
-        return None
+
+    for tool_arg in tool_args:
+        if tool_arg.get("tool_call_id") == tool_call_id:
+            return tool_arg
+    return None
 
 
 def format_search_result(results):
@@ -39,7 +39,7 @@ def format_search_result(results):
     for result in results:
         answer += f'**[{result["title"]}]({result["url"]})**\n\n'
         answer += f'{result["content"]}\n\n'
-        answer += f'신뢰도: {result["score"]}\n\n'
+        answer += f"\uc2e0\ub8b0\ub3c4: {result['score']}\n\n"
         answer += "\n-----\n"
     return answer
 
@@ -60,10 +60,9 @@ def stream_handler(streamlit_container, agent_executor, inputs, config):
             - tool_args: List of tool arguments used
             - agent_answer: Final answer from the agent
     """
-    # Initialize result storage
     tool_args = []
     agent_answer = ""
-    agent_message = None  # Pre-declare agent_message variable
+    agent_message = None
 
     container = streamlit_container.container()
     with container:
@@ -71,40 +70,30 @@ def stream_handler(streamlit_container, agent_executor, inputs, config):
             inputs, config, stream_mode="messages"
         ):
             if hasattr(chunk_msg, "tool_calls") and chunk_msg.tool_calls:
-                # Initialize tool call result
+                tool_call = chunk_msg.tool_calls[0]
                 tool_arg = {
-                    "tool_name": "",
+                    "tool_name": tool_call.get("name", ""),
                     "tool_result": "",
-                    "tool_call_id": chunk_msg.tool_calls[0]["id"],
+                    "tool_call_id": tool_call.get("id"),
                 }
-                # Save tool name
-                tool_arg["tool_name"] = chunk_msg.tool_calls[0]["name"]
                 if tool_arg["tool_name"]:
                     tool_args.append(tool_arg)
 
-            if hasattr(chunk_msg, "tool_call_chunks") and chunk_msg.tool_call_chunks:
-                if len(chunk_msg.tool_call_chunks) > 0:  # Add None check
-                    # Accumulate tool call arguments
-                    chunk_msg.tool_call_chunks[0]["args"]
-
-            if metadata["langgraph_node"] == "tools":
-                # Save tool execution results
-                current_tool_message = get_current_tool_message(
-                    tool_args, chunk_msg.tool_call_id
-                )
+            if metadata.get("langgraph_node") == "tools":
+                tool_call_id = getattr(chunk_msg, "tool_call_id", None)
+                current_tool_message = get_current_tool_message(tool_args, tool_call_id)
                 if current_tool_message:
                     current_tool_message["tool_result"] = chunk_msg.content
-                    with st.status(f'툴: {current_tool_message["tool_name"]}'):
+                    with st.status(f"\ud234: {current_tool_message['tool_name']}"):
                         render_tool_result(
                             current_tool_message["tool_name"],
                             current_tool_message["tool_result"],
                         )
 
-            if metadata["langgraph_node"] == "agent":
+            if metadata.get("langgraph_node") == "agent":
                 if chunk_msg.content:
                     if agent_message is None:
                         agent_message = st.empty()
-                    # Accumulate agent message
                     agent_answer += chunk_msg.content
                     agent_message.markdown(agent_answer)
 
@@ -127,11 +116,11 @@ def render_tool_result(tool_name: str, tool_result: str):
 
         images = payload.get("images", []) if isinstance(payload, dict) else []
         if not images:
-            st.markdown("이미지 결과가 없습니다.")
+            st.markdown("\uc774\ubbf8\uc9c0 \uacb0\uacfc\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.")
             return
 
         for idx, image in enumerate(images, start=1):
-            st.image(image, caption=f"생성 이미지 {idx}")
+            st.image(image, caption=f"\uc0dd\uc131 \uc774\ubbf8\uc9c0 {idx}")
         return
 
     if tool_name == "document_search":
@@ -144,18 +133,19 @@ def render_tool_result(tool_name: str, tool_result: str):
         results = payload.get("results", []) if isinstance(payload, dict) else []
         context = payload.get("context", "") if isinstance(payload, dict) else ""
         if not results:
-            st.markdown("검색 결과가 없습니다.")
+            st.markdown("\uac80\uc0c9 \uacb0\uacfc\uac00 \uc5c6\uc2b5\ub2c8\ub2e4.")
             return
 
         if context:
-            with st.expander("RAG 컨텍스트"):
+            with st.expander("RAG \ucee8\ud14d\uc2a4\ud2b8"):
                 st.markdown(context)
 
         for idx, item in enumerate(results, start=1):
-            score = item.get("score", 0)
             content = item.get("content", "")
             source = item.get("source", "uploaded_document")
-            st.markdown(f"**문서 조각 {idx} (source: {source})**")
+            st.markdown(
+                f"**\ubb38\uc11c \uc870\uac01 {idx} (source: {source})**"
+            )
             st.markdown(content)
         return
 
